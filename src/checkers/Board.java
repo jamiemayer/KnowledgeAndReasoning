@@ -201,6 +201,10 @@ public class Board {
         return currentTurn;
     }
     
+    public void setTurn(Team team){
+        currentTurn = team;
+    }
+    
     public boolean isGameOver(){
         return gameOver;
     }
