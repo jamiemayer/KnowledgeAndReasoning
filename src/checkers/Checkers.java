@@ -1,10 +1,44 @@
 package checkers;
 import java.util.*;
 import java.lang.Math.*;
+import java.util.Scanner;
 
 
 /**
  *
+ * CURRENT STATE: 
+ * Taking player moves via command line.
+ * Player moves working (CARE: NO LEGAL MOVE VALIDATION!!)
+ * Appears to be working, tested up to a depth of 4. Currently has no end game
+ * mechanics but these can be added. 
+ * 
+ * TODO (Not in priority order).
+ * 
+ * Heuristic needs improving as currently very basic.
+ * 
+ * King functionality needs to be implemented including moves. E.G Double jump.
+ * 
+ * GUI needs finishing and tying in to logic.(Scaling for different resolutions)
+ * 
+ * Difficulty setting.
+ * 
+ * JavaDoc.
+ * 
+ * More Unit tests (where possible).
+ * 
+ * Report.
+ * 
+ * EXTENSIONS:
+ * 
+ * Intro to game, including rule set.
+ * 
+ * Help button incase player is stuck.
+ * 
+ * Back button (simple stack containing past game states).
+ * 
+ * Graphics option (this is unlikely given time constraints).
+ * 
+ * 
  * @author Jamie
  */
 public class Checkers {
@@ -13,59 +47,100 @@ public class Checkers {
     public Checkers(){}
     
     public static void main(String[] args) {
-        Board game = new Board(); // set up new game
-        startGame(game);
+        
+        startGame();
         
     }
-    
-    // Checks if the game state is Black Wins
-    public boolean blackWins(Node node){
-       int[][] state = node.getState();
-       for (int i =0; i <8;i++){
-           for(int j = 0; j<8;j++){
-               if(state[i][j]==2 |state[i][j] ==4){
-                   return false;
-               }
-           }
-       }
-       return true;
-    }
-
-    // Checks if game state is White Wins
-    public boolean whiteWins(Node node){
-        int [][] state = node.getState();
-        for(int i = 0; i <8; i++){
-            for(int j = 0; j<8;j++){
-                if(state[i][j]==1 | state[i][j]==3){
-                    return false;
-                }
-            }
-        }        
-        return true;
-    }
-    
-    
+       
     public static float miniMax(Node node,int depth){
-        if(depth == 0|node.isLeaf() ==true){
-            return evaluate(node);
-        }
         
-        if (node.getPlayer()== Node.minMax.MAX){
-            ArrayList <Node> children = getChildren(node);
-            for(int i = 0; i < children.size(); i++){
-                float eval = miniMax(children.get(i),depth-1);
-                node.setBestScore(Math.max(node.getScore(), eval));
-                nextMove = node.getState().clone();
-            }
+        //get children first as if no more moves are found then node is leaf.
+        ArrayList <Move> children = getChildren(node); // Appears to be functioning as expected
+        if(depth == 0|children.isEmpty()){
+            //nextMove = clone2D(node.getState());
+            node.setBestScore(evaluate(node));
             return node.getScore();
         }
         
-        if (node.getPlayer() == Node.minMax.MIN){
-            ArrayList <Node> children = getChildren(node);
+        if (node.getPlayer()== Node.minMax.MAX){
+            float bestScore = Float.MIN_VALUE;
             for(int i = 0; i < children.size(); i++){
-                float eval = miniMax(children.get(i),depth-1);
-                node.setBestScore(Math.min(node.getScore(), eval));
-                nextMove = node.getState().clone();
+
+                int y = children.get(i).origPos[0];
+                int x = children.get(i).origPos[1];
+                int newY = children.get(i).newPos[0];
+                int newX = children.get(i).newPos[1];
+                
+                int[][] state = clone2D(node.getState());
+                
+                // Make original space empty
+                state[y][x]=0;
+                // Put piece in new space
+                state[newY][newX]= children.get(i).piece;
+                
+                
+                // if piece taken, remove it from board
+                // x = j, y = i. Y only needed for kings
+                if(Math.abs(x-newX)>1|Math.abs(y-newY)>2){
+                    if(x>newX){
+                        state[y+1][x-1] = 0;
+                    }
+                    else{
+                        state[y+1][x+1] = 0;
+                    }
+                }
+                // Create new MIN node
+                Node next = new Node(Node.minMax.MIN,node);
+                // Pass updated state to new node.
+                next.setState(clone2D(state));
+                // Recursive Call to minimax
+                float eval = miniMax(next,depth-1);
+                bestScore = Math.max(eval, bestScore);
+                if (bestScore == eval){
+                    nextMove = next.getState();
+                }
+                
+            }
+            return bestScore;
+        }
+        
+        if (node.getPlayer() == Node.minMax.MIN){
+            for(int i = 0; i < children.size(); i++){
+                float bestScore = Float.MAX_VALUE;
+                int y = children.get(i).origPos[0];
+                int x = children.get(i).origPos[1];
+                int newY = children.get(i).newPos[0];
+                int newX = children.get(i).newPos[1];
+                // Get state of current node and clone
+                
+                int[][] state = clone2D(node.getState());               
+
+                // Make original space empty
+                state[y][x]=0;
+                // Put peice in new space
+                state[newY][newX]= children.get(i).piece;
+                // if piece taken, remove it from board
+                // x = j, y = i. Y only needed for kings
+                if(Math.abs(x-newX)>1|Math.abs(y-newY)>2){
+                    if(x>newX){
+                        state[y-1][x-1] = 0;
+                    }
+                    else{
+                        state[y-1][x+1] = 0;
+                    }
+                }
+                // Create new max mode
+                Node next = new Node(Node.minMax.MAX,node);
+                next.setState(clone2D(state));
+                
+                
+                
+                
+                float eval = miniMax(next,depth-1);
+                bestScore = Math.min(eval, bestScore);
+                if(bestScore == eval){
+                    nextMove = next.getState();
+                }
             }
             return node.getScore();
         }
@@ -73,215 +148,158 @@ public class Checkers {
         return 0;
     }
     
-    public static ArrayList<Node> getChildren(Node n){
-        ArrayList <Node> children = new ArrayList();
-        int [][] state = n.getState();
-        //loop through board
-        for (int i =0; i<8;i++){
-            for (int j = 0; j<8; j++){
-                //if a black pawn is found
-                if(state[i][j]==1){
-                    //if the pawn is not on the left or bottom board boundary
-                    if(j!=0 && i!=7){
-                        // if the space to the bottom left is unoccupied
-                        if(state[i+1][j-1]==0){
-                            int [][] newState = state.clone();
-                            // create a copy of state and move piece to new pos
-                            newState[i][j]=0;
-                            newState [i+1][j-1] = 1;
-                            // if parent node is MAX add MIN child node 
-                            if (n.getPlayer()==Node.minMax.MAX){
-                                Node child = new Node(Node.minMax.MIN,n);
-                                child.setState(newState);
-                                children.add(child);
-                                
-                            }
-                            // else add MAX child node
-                            /*else{
-                                Node child = new Node(Node.minMax.MAX,n);
-                                child.setState(newState);
-                                children.add(child);
-                            }*/
-                        }
+    public static ArrayList<Move> getChildren (Node node){
+        ArrayList <Move> children = new ArrayList();
+        int [][] state = node.getState();
+        
+        for(int i = 0; i <8; i++){
+            for (int j = 0; j < 8; j++){
+                // If a black pawn is found and it is black's turn
+                if(state[i][j]==1 && node.getPlayer()== Node.minMax.MAX){
+                    
+                    
+                    // If the piece is not on the left or bottom board boundary
+                    // and there is an empty space to the lower left
+                    if((j>0 && i<7)&&(state[i+1][j-1]==0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i+1, j-1},1));
                     }
-                    //if the pawn is not on the right or bottom board boundary
-                    if(j!=7 && i!=7){
-                        //if the space to the bottom right is unoccupied
-                        if(state[i+1][j+1]==0){
-                            //create a copy of state and move peice to new pos
-                            int [][] newState = state.clone();
-                            newState[i][j]=0;
-                            newState[i+1][j+1] = 1; 
-                            // if parent mode is MAX, add Min child node
-                            if(n.getPlayer() == Node.minMax.MAX){
-                                Node child = new Node(Node.minMax.MIN,n);
-                                child.setState(newState);
-                                children.add(child);
-                            }
-                            /*else{
-                                Node child = new Node(Node.minMax.MAX,n);
-                                child.setState(newState);
-                                children.add(child);
-                            }*/
-                        }
+                    // If the piece is not on the right or bottom boundary
+                    // and there is an empty space to the lower right
+                    if((j<7 && i<7)&&(state[i+1][j+1]==0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i+1, j+1},1));
                     }
-                    // If there is room to take an opponent in the bottom left
-                    if(j>1 && i<6){
-                        // if there is an opponent in the bottom left space
-                        if(state[i+1][j-1]==2){
-                            // and there is opportunity to take that peice
-                            if(state[1+2][j-2]==0){
-                                int[][] newState = state.clone();
-                                newState[i][j] = 0;
-                                newState[i+1][j-1] =0;
-                                newState[i+2][j-2] =1;
-                                
-                                if(n.getPlayer()== Node.minMax.MAX){
-                                    Node child = new Node(Node.minMax.MIN,n);
-                                    child.setState(newState);
-                                    children.add(child);
-                                }
-                                /*else{
-                                    Node child = new Node(Node.minMax.MAX,n);
-                                    child.setState(newState);
-                                    children.add(child);
-                                }*/
-                            }
-                        }
+                    // If there is room to make a take to the lower left
+                    // and there is an opponent that can be taken in this space
+                    // and a take is possible
+                    if((j>1 && i <6)&&(state[i+1][j-1]==2)&&(state[i+2][j-2]== 0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i+2, j-2},1));                        
                     }
-                    // If there is room to take an opponent in the bottom right
-                    if(j<6 && i<6){
-                        // if there is an opponent in the bottom right space
-                        if(state[i+1][j+1]==2){
-                            // and ther is an opportunity to take that peice
-                            if(state[i+2][j+2]==0){
-                                int[][] newState = state.clone();
-                                newState[i][j] = 0;
-                                newState[i+1][j+1]=0;
-                                newState[i+2][j+2]=1;
-                                
-                                if(n.getPlayer() == Node.minMax.MAX){
-                                    Node child = new Node(Node.minMax.MIN,n);
-                                    child.setState(newState);
-                                    children.add(child);
-                                }
-                                /*else{
-                                    Node child = new Node(Node.minMax.MAX,n);
-                                    child.setState(newState);
-                                    children.add(child);
-                                }*/
-                            }
-                        }
+                    // If there is room to make a take to the lower right
+                    // and there is an opponent that can be taken in this space
+                    // and a take is possible
+                    if((j<6 && i <6)&&(state[i+1][j+1]==2)&&(state[i+2][j+2]== 0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i+2, j+2},1));
                     }
                 }
-                //if a white piece is found and AI is MIN
-                if (state[i][j]==2 && n.getPlayer()== Node.minMax.MIN){
+                
+                // If a white pawn is found and it is white's turn
+                if(state[i][j]==2 && node.getPlayer()==Node.minMax.MIN){
+                    
+                    
                     // If the piece is not on the left or upper board boundary
-                    if(j>0 && i>0){
-                        // if the space to the upper left is empty
-                        if(state[i-1][j-1]==0){
-                            int[][] newState = state.clone();
-                            newState[i][j]=0;
-                            newState[i-1][j-1] = 2;                            
-                            
-                            Node child = new Node(Node.minMax.MAX,n);
-                            child.setState(newState);
-                            children.add(child);
-                            
-                        }
+                    // and there is an empty spaceto the upper left
+                    if((j!=0 && i!=0)&&(state[i-1][j-1]==0)){
+                        
+                        children.add(new Move(new int[]{i,j}, new int[]{i-1, j-1},2));                        
                     }
-                    // if the peice is not on the right or upper board boundary
-                    if(j<7 &&  i>0){
-                        //if the space to the upper right is empty
-                        if(state[i-1][j+1]==0){
-                            int[][] newState = state.clone();
-                            newState[i][j] = 0;
-                            newState[i-1][j+1] = 2;                            
-   
-                            Node child = new Node(Node.minMax.MAX,n);
-                            child.setState(newState);
-                            children.add(child);
-                            
-                        }
+                    // If the piece is not on the right or upper board boundary
+                    // and there is an empty space to the upper right
+                    if((j!=7&&i!=0)&&(state[i-1][j+1]==0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i-1, j+1},2));
+                    }
+                    // If there is room to make a take on the upper left
+                    // and thre is an opponent that can be taken in this space
+                    // and a take is possible
+                    if((i>1 && j>1)&&(state[i-1][j-1]==1)&&(state[i-2][j-2]==0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i-2, j-2},2));
+                    }
+                    // If there is room to make a take on the upper right
+                    // and there is an opponent that can be taken in this space
+                    // and a take is possible
+                    if((i>1 && j < 6)&&(state[i-1][j+1]==1)&&(state[i-2][j+2]==0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i-2, j+2},2));
                     }
                     
-                    // if there room to take a peice to the upper left
-                    if(i>1 && j >1){
-                        // if there is an opponent to the upper left
-                        if(state[i-1][j-1]==1){
-                            // and there is opportunity to take it
-                            if (state[i-2][j-2]==0){
-                                int[][] newState = state.clone();
-                                newState[i][j]=0;
-                                newState[i-1][j-1]=0;
-                                newState[i-2][j-2] = 2;
-                                
-                                Node child = new Node(Node.minMax.MAX,n);
-                                child.setState(newState);
-                                children.add(child);
-                            }
-                        }
-                    }
-                    // if there is room to take a peice to the upper right
-                    if (i>1 && j <6){
-                        // if there is an opponent in the upper right
-                        if (state[i-1][j+1] ==1){
-                            // and there is opportunity to take it
-                            if(state[i-2][j+2]==0){
-                                int [][] newState = state.clone();
-                                newState[i][j] = 0;
-                                newState[i-1][j+1] = 0;
-                                newState[1-2][j-2] = 2;
-                                
-                                Node child = new Node(Node.minMax.MAX,n);
-                                child.setState(newState);
-                                children.add(child);
-                            }
-                        }
-                    }
                 }
-
             }
         }
         
-        // Get each child node and set isLeaf
         
-        return children;
-       
+        return  children;
     }
+       
     
-    public static void startGame(Board board){
+    public static void startGame(){
+        Board board = new Board(); // set up new game
+        nextMove = clone2D(board.getState());
+        Scanner keyboard = new Scanner(System.in);
+        
+        while(board.getPlayerTeam()==null){
+            // For some reason loop won't break unless this line is executed?
+            System.out.println(board.getPlayerTeam());
+        }
+
         while(!board.isGameOver()){
-            if(board.getPlayerTeam()==board.getCurrentTurn()){
+            if(board.getPlayerTeam().equals(board.getCurrentTurn())){
+                
+                System.out.println("Player Turn");
+                
                 //Process Player Turn
+                printBoard(board.getState());
+
+                
+                System.out.println("Please input location of pawn");
+                int x = keyboard.nextInt();
+                int y = keyboard.nextInt();
+                System.out.println("Please input space to move to");
+                int nX = keyboard.nextInt();
+                int nY = keyboard.nextInt();
+
                 
                 //Update game state
+                int [][] state = clone2D(board.getState());
+                state[y][x] = 0;
+                if(board.getPlayerTeam() == Board.Team.WHITE){
+                    state[nY][nX] = 2;
+                }
+                else{
+                    state[nY][nX] = 1;
+                }
+                
+                board.setState(state);
+                
+                printBoard(board.getState());
+                
+                keyboard.next();
+                
+                //Switch turns
+                if(board.getCurrentTurn()== Board.Team.BLACK){
+                    board.setTurn(Board.Team.WHITE);
+                }
+                else{
+                    board.setTurn(Board.Team.BLACK);
+                }
                 
                 if(board.isGameOver()){
                     break;
                 }
             }
             else{
-                
+                System.out.println("CPU Turn");
                 //Copy current state of board to new 2D array
-                int [][] copy = board.getState().clone();
-                
+                int [][] copy = clone2D(board.getState());
                 Node node = null;
                 
                 // Instatiate new Node
+                
+                // If AI is playing white...
                 if(board.getPlayerTeam()== Board.Team.BLACK){
-                    node = new Node(Node.minMax.MAX,null);
+                    System.out.println("Min node initialised");
+                    node = new Node(Node.minMax.MIN,null);
+                    node.setState(copy);
                 }
                 else{
-                    node = new Node(Node.minMax.MIN, null);
+                    System.out.println("Max node initialised");
+                    node = new Node(Node.minMax.MAX, null);
+                    node.setState(copy);
                 }
                 
                 // Pass node to Minimax
-                miniMax(node,4);
-                
+                float score = miniMax(node,4);                
                 
                 // Make move and update board
-                board.setState(nextMove);
+                board.setState(clone2D(nextMove));
+                System.out.println("One move made");
 
                 // Check game over
                 if(board.isGameOver()){
@@ -294,29 +312,58 @@ public class Checkers {
                 }
                 else{
                     board.setTurn(Board.Team.BLACK);
-                }
-                
-                
-                
+                } 
             }
-        }
-            
-        
+            System.out.println("One loop complete");
+        }  
     }
     
     private static float evaluate(Node node){
         float eval = (float) 0;
+        int whiteCount = 0;
+        int blackCount = 0;
+        
+        
         int [][] state = node.getState();
         for (int i = 0; i<8; i++){
             for (int j = 0; j<8; j++){
                 if(state[i][j]%2 != 0){
                     eval++;
+                    blackCount++;
                 }
-                if(state[i][j]==2|state[i][j]==4){
+                if(state[i][j]==2|state[i][j]==1){
                     eval--;
+                    whiteCount++;
                 }
             }
-        }        
+        }
+        if (whiteCount ==0){
+            return 1;
+        }
+        if (blackCount ==0){
+            return -1;
+        }
         return eval/50;
     }
+    
+    private static void printBoard(int[][] board){
+        for (int i = 0; i<8; i++){
+            for (int j = 0; j<8; j++){
+                
+                System.out.print(board[i][j]);
+            }
+            
+            System.out.println("\n");
+        }
+        System.out.println("\n");
+    }
+    
+    private static int[][] clone2D(int[][] arr){
+        int[][] clone = new int[8][8];
+        for (int i = 0;i<8;i++){
+            clone[i] = arr[i].clone();
+        }
+        return clone;
+    }
+    
 }

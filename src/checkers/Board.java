@@ -13,7 +13,7 @@ public class Board {
     private JFrame window;
     protected String playerName;
     public enum Team{BLACK, WHITE};
-    private Team playerColour;
+    private Team playerColour = null;
     private int[][] state;
     private int blackPawns;
     private int blackKings;
@@ -21,6 +21,7 @@ public class Board {
     private int whiteKings;
     private Team currentTurn;
     private boolean gameOver;
+    private boolean ready = false;
         
     Board(){        
         createWindow();
@@ -151,6 +152,7 @@ public class Board {
         cp.add(surface);
         cp.add(exit);
         window.pack();
+        this.ready = true;
         
     }
     
@@ -211,6 +213,10 @@ public class Board {
     
     public void setGameOver(boolean gameOver){
         this.gameOver =gameOver;
+    }
+    
+    public boolean isReady(){
+        return ready;
     }
     
 }

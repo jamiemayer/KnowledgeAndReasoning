@@ -17,7 +17,6 @@ public class Node {
     private minMax player;
     private Node parent;
     private int[][] state;
-    private boolean leaf;
     
     //----- Methods-----//
     
@@ -25,7 +24,6 @@ public class Node {
     public Node(minMax player, Node parent){
         this.player = player;
         this.parent = parent;
-        leaf = false;
         if (player == minMax.MAX){
             bestScore = Float.MIN_VALUE;
         }
@@ -61,12 +59,5 @@ public class Node {
         return state;
     }
     
-    public void setLeaf(boolean leaf){
-        this.leaf = leaf;
-    }
-    
-    public boolean isLeaf(){
-        return leaf;
-    }
    
 }
