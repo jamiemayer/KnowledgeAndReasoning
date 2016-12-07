@@ -10,17 +10,24 @@ import java.util.Scanner;
  * Taking player moves via command line.
  * Player moves working (CARE: NO LEGAL MOVE VALIDATION!!)
  * Appears to be working, tested up to a depth of 4. Currently has no end game
- * mechanics but these can be added. 
+ * mechanics but these can be added.
+ * Some work carried out on GUI so that board now represents game state 
+ * accurately.
  * 
  * TODO (Not in priority order).
  * 
- * Heuristic needs improving as currently very basic.
+ * Player moves need processing in GUI. Mouse listeners need to be set up.
  * 
- * King functionality needs to be implemented including moves. E.G Double jump.
+ * Heuristic needs improving as currently very basic.
+ *  ----IDEA: How many blocking King crowning spaces as heuristic. 
+ *  * 
+ * Double Jump needs thinking about 
  * 
  * GUI needs finishing and tying in to logic.(Scaling for different resolutions)
  * 
  * Difficulty setting.
+ * 
+ * Alpha - Beta Pruning 
  * 
  * JavaDoc.
  * 
@@ -81,14 +88,39 @@ public class Checkers {
                 
                 // if piece taken, remove it from board
                 // x = j, y = i. Y only needed for kings
-                if(Math.abs(x-newX)>1|Math.abs(y-newY)>2){
-                    if(x>newX){
-                        state[y+1][x-1] = 0;
-                    }
-                    else{
-                        state[y+1][x+1] = 0;
-                    }
+                if(Math.abs(x-newX)==2|Math.abs(y-newY)==2){
+                        if(children.get(i).piece==1){
+                            if(x>newX){
+                                state[y+1][x-1] = 0;
+                            }
+                            if(x<newX){
+                                state[y+1][x+1]=0;
+                            }
+                        }
+                        else{
+                            state[y+1][x+1] =0;
+                        }
+                        if(children.get(i).piece==3){
+                            if(y>newY&&x>newX){ //up and left
+                                state[y-1][x-1]=0;
+                            }
+                            if(y>newY&&x<newX){ // up and right
+                                state[y-1][x+1]=0;
+                            }
+                            if(y<newY&&x>newX){ // down and left
+                                state[y+1][x-1]=0;
+                            }
+                            if(y<newY&&x<newX){
+                                state[y+1][x+1]=0;
+                            }
+                        } 
+                }                
+                // if end of board is reached. Replace pawn with a king.
+                if(newY==7 && children.get(i).piece ==1){
+                    state[newY][newX]=3;
                 }
+                
+                
                 // Create new MIN node
                 Node next = new Node(Node.minMax.MIN,node);
                 // Pass updated state to new node.
@@ -121,14 +153,39 @@ public class Checkers {
                 state[newY][newX]= children.get(i).piece;
                 // if piece taken, remove it from board
                 // x = j, y = i. Y only needed for kings
-                if(Math.abs(x-newX)>1|Math.abs(y-newY)>2){
-                    if(x>newX){
-                        state[y-1][x-1] = 0;
-                    }
-                    else{
-                        state[y-1][x+1] = 0;
-                    }
+                if(Math.abs(x-newX)==2|Math.abs(y-newY)==2){
+                        if(children.get(i).piece==2){
+                            if(x>newX){
+                                state[y-1][x-1] = 0;
+                            }
+                            if(x<newX){
+                                state[y-1][x+1]=0;
+                            }
+                        }
+                        else{
+                            state[y+1][x+1] =0;
+                        }
+                        if(children.get(i).piece==4){
+                            if(y>newY&&x>newX){ //up and left
+                                state[y-1][x-1]=0;
+                            }
+                            if(y>newY&&x<newX){ // up and right
+                                state[y-1][x+1]=0;
+                            }
+                            if(y<newY&&x>newX){ // down and left
+                                state[y+1][x-1]=0;
+                            }
+                            if(y<newY&&x<newX){
+                                state[y+1][x+1]=0;
+                            }
+                        } 
                 }
+                // if end of board is reached. Replace pawn with a king.
+                if(newY==0 && children.get(i).piece ==2){
+                    state[newY][newX]=4;
+                }                
+                
+                
                 // Create new max mode
                 Node next = new Node(Node.minMax.MAX,node);
                 next.setState(clone2D(state));
@@ -154,36 +211,63 @@ public class Checkers {
         
         for(int i = 0; i <8; i++){
             for (int j = 0; j < 8; j++){
-                // If a black pawn is found and it is black's turn
-                if(state[i][j]==1 && node.getPlayer()== Node.minMax.MAX){
-                    
+                // If a black pawn or king is found and it is black's turn
+                if((state[i][j]==1|state[i][j]==3) && node.getPlayer()== Node.minMax.MAX){
                     
                     // If the piece is not on the left or bottom board boundary
                     // and there is an empty space to the lower left
                     if((j>0 && i<7)&&(state[i+1][j-1]==0)){
-                        children.add(new Move(new int[]{i,j}, new int[]{i+1, j-1},1));
+                        children.add(new Move(new int[]{i,j}, new int[]{i+1, j-1}, state[i][j]));
                     }
                     // If the piece is not on the right or bottom boundary
                     // and there is an empty space to the lower right
                     if((j<7 && i<7)&&(state[i+1][j+1]==0)){
-                        children.add(new Move(new int[]{i,j}, new int[]{i+1, j+1},1));
+                        children.add(new Move(new int[]{i,j}, new int[]{i+1, j+1},state[i][j]));
                     }
                     // If there is room to make a take to the lower left
                     // and there is an opponent that can be taken in this space
                     // and a take is possible
-                    if((j>1 && i <6)&&(state[i+1][j-1]==2)&&(state[i+2][j-2]== 0)){
-                        children.add(new Move(new int[]{i,j}, new int[]{i+2, j-2},1));                        
+                    if((j>1 && i <6)&&(state[i+1][j-1]==2|state[i+1][j-1]==4)&&(state[i+2][j-2]== 0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i+2, j-2},state[i][j]));                        
                     }
                     // If there is room to make a take to the lower right
                     // and there is an opponent that can be taken in this space
                     // and a take is possible
-                    if((j<6 && i <6)&&(state[i+1][j+1]==2)&&(state[i+2][j+2]== 0)){
-                        children.add(new Move(new int[]{i,j}, new int[]{i+2, j+2},1));
+                    if((j<6 && i <6)&&(state[i+1][j+1]==2|state[i+1][j+1]==4)&&(state[i+2][j+2]== 0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i+2, j+2},state[i][j]));
                     }
+                    
+                    // Moves exclusive to king
+                    if(state[i][j]==3){
+                        // If the piece is not on the left or upper board boundary
+                        // and there is an empty spaceto the upper left
+                        if((j!=0 && i!=0)&&(state[i-1][j-1]==0)){
+                            children.add(new Move(new int[]{i,j}, new int[]{i-1, j-1},state[i][j]));                        
+                        }
+                        // If the piece is not on the right or upper board boundary
+                        // and there is an empty space to the upper right
+                        if((j!=7&&i!=0)&&(state[i-1][j+1]==0)){
+                            children.add(new Move(new int[]{i,j}, new int[]{i-1, j+1},state[i][j]));
+                        }
+                        // If there is room to make a take on the upper left
+                        // and thre is an opponent that can be taken in this space
+                        // and a take is possible
+                        if((i>1 && j>1)&&(state[i-1][j-1]==2|state[i-1][j-1]==4)&&(state[i-2][j-2]==0)){
+                            children.add(new Move(new int[]{i,j}, new int[]{i-2, j-2},state[i][j]));
+                        }
+                        // If there is room to make a take on the upper right
+                        // and there is an opponent that can be taken in this space
+                        // and a take is possible
+                        if((i>1 && j < 6)&&(state[i-1][j+1]==2|state[i-1][j+1]==4)&&(state[i-2][j+2]==0)){
+                            children.add(new Move(new int[]{i,j}, new int[]{i-2, j+2},state[i][j]));
+                        }
+                    }
+                    
+                    
                 }
                 
                 // If a white pawn is found and it is white's turn
-                if(state[i][j]==2 && node.getPlayer()==Node.minMax.MIN){
+                if((state[i][j]==2|state[i][j]==4) && node.getPlayer()==Node.minMax.MIN){
                     
                     
                     // If the piece is not on the left or upper board boundary
@@ -200,14 +284,40 @@ public class Checkers {
                     // If there is room to make a take on the upper left
                     // and thre is an opponent that can be taken in this space
                     // and a take is possible
-                    if((i>1 && j>1)&&(state[i-1][j-1]==1)&&(state[i-2][j-2]==0)){
+                    if((i>1 && j>1)&&(state[i-1][j-1]==1|state[i-1][j-1]==3)&&(state[i-2][j-2]==0)){
                         children.add(new Move(new int[]{i,j}, new int[]{i-2, j-2},2));
                     }
                     // If there is room to make a take on the upper right
                     // and there is an opponent that can be taken in this space
                     // and a take is possible
-                    if((i>1 && j < 6)&&(state[i-1][j+1]==1)&&(state[i-2][j+2]==0)){
+                    if((i>1 && j < 6)&&(state[i-1][j+1]==1|state[i-1][j+1]==3)&&(state[i-2][j+2]==0)){
                         children.add(new Move(new int[]{i,j}, new int[]{i-2, j+2},2));
+                    }
+                    
+                    // Moves exclusive to king
+                    if (state[i][j]==4){
+                    // If the piece is not on the left or bottom board boundary
+                    // and there is an empty space to the lower left
+                    if((j>0 && i<7)&&(state[i+1][j-1]==0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i+1, j-1}, state[i][j]));
+                    }
+                    // If the piece is not on the right or bottom boundary
+                    // and there is an empty space to the lower right
+                    if((j<7 && i<7)&&(state[i+1][j+1]==0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i+1, j+1},state[i][j]));
+                    }
+                    // If there is room to make a take to the lower left
+                    // and there is an opponent that can be taken in this space
+                    // and a take is possible
+                    if((j>1 && i <6)&&(state[i+1][j-1]==1|state[i+1][j-1]==3)&&(state[i+2][j-2]== 0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i+2, j-2},state[i][j]));                        
+                    }
+                    // If there is room to make a take to the lower right
+                    // and there is an opponent that can be taken in this space
+                    // and a take is possible
+                    if((j<6 && i <6)&&(state[i+1][j+1]==1|state[i+1][j+1]==3)&&(state[i+2][j+2]== 0)){
+                        children.add(new Move(new int[]{i,j}, new int[]{i+2, j+2},state[i][j]));
+                    }                        
                     }
                     
                 }
@@ -255,6 +365,15 @@ public class Checkers {
                 else{
                     state[nY][nX] = 1;
                 }
+                // Will only work for black with no kings
+                if(Math.abs(x-nX)>1|Math.abs(y-nY)>1){
+                    if(x>nX){
+                        state[y+1][x-1] = 0;
+                    }
+                    else{
+                        state[y+1][x+1] = 0;
+                    }
+                }
                 
                 board.setState(state);
                 
@@ -269,6 +388,8 @@ public class Checkers {
                 else{
                     board.setTurn(Board.Team.BLACK);
                 }
+                
+                board.updateGUI();
                 
                 if(board.isGameOver()){
                     break;
@@ -300,7 +421,9 @@ public class Checkers {
                 // Make move and update board
                 board.setState(clone2D(nextMove));
                 System.out.println("One move made");
-
+                
+                board.updateGUI();
+                
                 // Check game over
                 if(board.isGameOver()){
                     break;
@@ -327,12 +450,20 @@ public class Checkers {
         int [][] state = node.getState();
         for (int i = 0; i<8; i++){
             for (int j = 0; j<8; j++){
-                if(state[i][j]%2 != 0){
+                if(state[i][j]==1){
                     eval++;
                     blackCount++;
                 }
-                if(state[i][j]==2|state[i][j]==1){
+                if(state[i][j]==2){
                     eval--;
+                    whiteCount++;
+                }
+                if (state[i][j]==3){
+                    eval = eval+5;
+                    blackCount++;
+                }
+                if (state[i][j]==4){
+                    eval = eval -5;
                     whiteCount++;
                 }
             }
@@ -347,15 +478,25 @@ public class Checkers {
     }
     
     private static void printBoard(int[][] board){
+        int bc = 0;
+        int wc = 0;
+        
         for (int i = 0; i<8; i++){
             for (int j = 0; j<8; j++){
                 
-                System.out.print(board[i][j]);
+                System.out.print(board[i][j]+"\t");
+                if(board[i][j]==2){
+                    wc++;
+                }
+                if (board[i][j]==1){
+                    bc++;
+                }
             }
             
             System.out.println("\n");
         }
         System.out.println("\n");
+        System.out.println("White count: "+wc+"\nBlack count: "+bc+"\n");
     }
     
     private static int[][] clone2D(int[][] arr){

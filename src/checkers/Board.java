@@ -2,6 +2,9 @@ package checkers;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.Font;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 /**
  *
@@ -22,10 +25,11 @@ public class Board {
     private Team currentTurn;
     private boolean gameOver;
     private boolean ready = false;
+    JPanel[][] panels = new JPanel[8][8];
         
     Board(){        
-        createWindow();
         setupGame();
+        createWindow();
         blackPawns = 12;
         blackKings = 0;
         whitePawns = 12;
@@ -116,16 +120,20 @@ public class Board {
         cp.setPreferredSize(new Dimension(900,900));
         cp.setLayout(new BoxLayout(cp,BoxLayout.Y_AXIS));
         JPanel surface = new JPanel(new GridLayout(8,8));
+        //JPanel[][] panels = new JPanel[8][8];
         surface.setBorder(BorderFactory.createStrokeBorder(new BasicStroke(5.0f)));
         for(int i = 0; i<8; i++){
             for (int j = 0; j<8;j++){
                 JPanel cell = new JPanel();
+
                 if(i % 2 == 0){
                     if(j % 2 == 0){
                         cell.setBackground(Color.BLACK);
+                        
                     }
                     else{
                         cell.setBackground(Color.WHITE);
+                        
                     }
                 }
                 else{
@@ -137,10 +145,19 @@ public class Board {
                     }
                 }                
                 cell.setPreferredSize(new Dimension(80,80));
-                surface.add(cell);
-                
+                cell.setLayout(new GridBagLayout());
+                this.panels[i][j]=cell;                
             }
         }
+        
+        setupPieces();
+        
+        for(int i=0; i<8; i++){
+            for(int j = 0; j<8; j++){
+                surface.add(panels[i][j]);
+            }
+        }
+        
         
         JButton exit = new JButton("Exit");
         exit.setOpaque(true);
@@ -152,7 +169,6 @@ public class Board {
         cp.add(surface);
         cp.add(exit);
         window.pack();
-        this.ready = true;
         
     }
     
@@ -181,15 +197,67 @@ public class Board {
                     }
                 }
             }
-        }
-        
-       for(int i =0; i <8; i++){
-            for(int j = 0; j<8; j++){
-                System.out.print(state[i][j]);
-            }
-            System.out.println("\n");
-        }
+        }     
     }
+    
+    public void setupPieces(){
+        ImageIcon blackPawn = new ImageIcon("BlackPawn.png");
+        ImageIcon whitePawn = new ImageIcon("WhitePawn.png");
+        ImageIcon blackKing = new ImageIcon("BlackKing.png");
+        ImageIcon whiteKing = new ImageIcon("WhiteKing.png");
+        
+        for (int i = 0; i<8; i++){
+            for(int j =0; j<8;j++){
+                if(state[i][j]==1){
+                    JLabel piece = new JLabel(blackPawn);
+                    if(playerColour == Team.BLACK){
+                        piece.addMouseListener(new MoveListener()); //---- Throwing error as expected.
+                    }
+                    panels[i][j].removeAll();
+                    panels[i][j].add(piece);
+                    panels[i][j].revalidate();
+                    panels[i][j].repaint();
+                }
+                if(state[i][j]==2){
+                    JLabel piece = new JLabel(whitePawn);
+                    panels[i][j].removeAll();
+                    panels[i][j].add(piece);
+                    panels[i][j].revalidate();
+                    panels[i][j].repaint();
+                }
+                
+                if(state[i][j]==3){
+                    JLabel piece = new JLabel(blackKing);
+                    panels[i][j].removeAll();
+                    panels[i][j].add(piece);
+                    panels[i][j].revalidate();
+                    panels[i][j].repaint();
+                }
+                
+                if(state[i][j]==4){
+                    JLabel piece = new JLabel(whiteKing);
+                    panels[i][j].removeAll();
+                    panels[i][j].add(piece);
+                    panels[i][j].revalidate();
+                    panels[i][j].repaint();                   
+                }
+                
+                if(state[i][j]==0){
+                    panels[i][j].removeAll();
+                    panels[i][j].revalidate();
+                    panels[i][j].repaint();
+                }
+                
+                    
+            }
+        }        
+    }
+    
+    public void updateGUI(){
+        setupPieces();
+        window.pack();
+    }
+    
     
     public void setState(int[][] state){
         this.state = state;
