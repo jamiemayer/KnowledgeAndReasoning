@@ -2,6 +2,8 @@ package checkers;
 import java.util.*;
 import java.lang.Math.*;
 import java.util.Scanner;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 
 
 /**
@@ -97,9 +99,6 @@ public class Checkers {
                                 state[y+1][x+1]=0;
                             }
                         }
-                        else{
-                            state[y+1][x+1] =0;
-                        }
                         if(children.get(i).piece==3){
                             if(y>newY&&x>newX){ //up and left
                                 state[y-1][x-1]=0;
@@ -129,7 +128,7 @@ public class Checkers {
                 float eval = miniMax(next,depth-1);
                 bestScore = Math.max(eval, bestScore);
                 if (bestScore == eval){
-                    nextMove = next.getState();
+                    nextMove = clone2D(next.getState());
                 }
                 
             }
@@ -162,9 +161,6 @@ public class Checkers {
                                 state[y-1][x+1]=0;
                             }
                         }
-                        else{
-                            state[y+1][x+1] =0;
-                        }
                         if(children.get(i).piece==4){
                             if(y>newY&&x>newX){ //up and left
                                 state[y-1][x-1]=0;
@@ -196,7 +192,7 @@ public class Checkers {
                 float eval = miniMax(next,depth-1);
                 bestScore = Math.min(eval, bestScore);
                 if(bestScore == eval){
-                    nextMove = next.getState();
+                    nextMove = clone2D(next.getState());
                 }
             }
             return node.getScore();
@@ -323,8 +319,6 @@ public class Checkers {
                 }
             }
         }
-        
-        
         return  children;
     }
        
@@ -338,63 +332,11 @@ public class Checkers {
             // For some reason loop won't break unless this line is executed?
             System.out.println(board.getPlayerTeam());
         }
-
         while(!board.isGameOver()){
             if(board.getPlayerTeam().equals(board.getCurrentTurn())){
-                
-                System.out.println("Player Turn");
-                
-                //Process Player Turn
-                printBoard(board.getState());
-
-                
-                System.out.println("Please input location of pawn");
-                int x = keyboard.nextInt();
-                int y = keyboard.nextInt();
-                System.out.println("Please input space to move to");
-                int nX = keyboard.nextInt();
-                int nY = keyboard.nextInt();
-
-                
-                //Update game state
-                int [][] state = clone2D(board.getState());
-                state[y][x] = 0;
-                if(board.getPlayerTeam() == Board.Team.WHITE){
-                    state[nY][nX] = 2;
+                System.out.println(board.getCurrentTurn());
+                keyboard.nextInt();
                 }
-                else{
-                    state[nY][nX] = 1;
-                }
-                // Will only work for black with no kings
-                if(Math.abs(x-nX)>1|Math.abs(y-nY)>1){
-                    if(x>nX){
-                        state[y+1][x-1] = 0;
-                    }
-                    else{
-                        state[y+1][x+1] = 0;
-                    }
-                }
-                
-                board.setState(state);
-                
-                printBoard(board.getState());
-                
-                keyboard.next();
-                
-                //Switch turns
-                if(board.getCurrentTurn()== Board.Team.BLACK){
-                    board.setTurn(Board.Team.WHITE);
-                }
-                else{
-                    board.setTurn(Board.Team.BLACK);
-                }
-                // Update screen
-                board.updateGUI();
-                
-                if(board.isGameOver()){
-                    break;
-                }
-            }
             else{
                 System.out.println("CPU Turn");
                 //Copy current state of board to new 2D array
@@ -412,15 +354,17 @@ public class Checkers {
                 else{
                     System.out.println("Max node initialised");
                     node = new Node(Node.minMax.MAX, null);
-                    node.setState(copy);
+                    node.setState(clone2D(copy));
                 }
                 
                 // Pass node to Minimax
-                float score = miniMax(node,4);                
+                float score = miniMax(node,4);
+                if(score ==1|score == -1){
+                    board.setGameOver(true);
+                }
                 
                 // Make move and update board
                 board.setState(clone2D(nextMove));
-                System.out.println("One move made");
                 
                 // Check game over
                 if(board.isGameOver()){
@@ -436,8 +380,10 @@ public class Checkers {
                 }
                 // Update screen
                 board.updateGUI();
+                printBoard(copy);
+                printBoard(nextMove);
+
             }
-            System.out.println("One loop complete");
         }  
     }
     
@@ -506,5 +452,6 @@ public class Checkers {
         }
         return clone;
     }
+    
     
 }

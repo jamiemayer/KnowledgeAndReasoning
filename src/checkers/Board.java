@@ -211,7 +211,7 @@ public class Board {
                 if(state[i][j]==1){
                     JLabel piece = new JLabel(blackPawn);
                     if(playerColour == Team.BLACK){
-                        piece.addMouseListener(new MoveListener(new int[] {i,j}, Checkers.clone2D(state),1, panels));                     
+                        piece.addMouseListener(new MoveListener(new int[] {i,j}, Checkers.clone2D(state),1, panels,this));                     
                         
                     }
                     panels[i][j].removeAll();
@@ -222,7 +222,7 @@ public class Board {
                 if(state[i][j]==2){
                     JLabel piece = new JLabel(whitePawn);
                     if(playerColour == Team.WHITE){
-                        piece.addMouseListener(new MoveListener(new int[] {i,j}, Checkers.clone2D(state),2, panels));                     
+                        piece.addMouseListener(new MoveListener(new int[] {i,j}, Checkers.clone2D(state),2, panels,this));                     
                         
                     }
                     panels[i][j].removeAll();
@@ -233,6 +233,10 @@ public class Board {
                 
                 if(state[i][j]==3){
                     JLabel piece = new JLabel(blackKing);
+                    if(playerColour == Team.BLACK){
+                        piece.addMouseListener(new MoveListener(new int[] {i,j}, Checkers.clone2D(state),3, panels,this));
+                        
+                    }                    
                     panels[i][j].removeAll();
                     panels[i][j].add(piece);
                     panels[i][j].revalidate();
@@ -241,6 +245,10 @@ public class Board {
                 
                 if(state[i][j]==4){
                     JLabel piece = new JLabel(whiteKing);
+                    if(playerColour == Team.WHITE){
+                        piece.addMouseListener(new MoveListener(new int[] {i,j}, Checkers.clone2D(state),4, panels,this));                     
+                        
+                    }
                     panels[i][j].removeAll();
                     panels[i][j].add(piece);
                     panels[i][j].revalidate();
@@ -290,6 +298,10 @@ public class Board {
     
     public boolean isReady(){
         return ready;
+    }
+    
+    public void processPayerTurn(){
+        
     }
     
 }
