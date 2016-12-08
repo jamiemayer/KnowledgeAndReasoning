@@ -211,7 +211,8 @@ public class Board {
                 if(state[i][j]==1){
                     JLabel piece = new JLabel(blackPawn);
                     if(playerColour == Team.BLACK){
-                        piece.addMouseListener(new MoveListener()); //---- Throwing error as expected.
+                        piece.addMouseListener(new MoveListener(new int[] {i,j}, Checkers.clone2D(state),1, panels));                     
+                        
                     }
                     panels[i][j].removeAll();
                     panels[i][j].add(piece);
@@ -220,6 +221,10 @@ public class Board {
                 }
                 if(state[i][j]==2){
                     JLabel piece = new JLabel(whitePawn);
+                    if(playerColour == Team.WHITE){
+                        piece.addMouseListener(new MoveListener(new int[] {i,j}, Checkers.clone2D(state),2, panels));                     
+                        
+                    }
                     panels[i][j].removeAll();
                     panels[i][j].add(piece);
                     panels[i][j].revalidate();

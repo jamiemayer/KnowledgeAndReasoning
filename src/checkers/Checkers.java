@@ -388,7 +388,7 @@ public class Checkers {
                 else{
                     board.setTurn(Board.Team.BLACK);
                 }
-                
+                // Update screen
                 board.updateGUI();
                 
                 if(board.isGameOver()){
@@ -422,8 +422,6 @@ public class Checkers {
                 board.setState(clone2D(nextMove));
                 System.out.println("One move made");
                 
-                board.updateGUI();
-                
                 // Check game over
                 if(board.isGameOver()){
                     break;
@@ -435,7 +433,9 @@ public class Checkers {
                 }
                 else{
                     board.setTurn(Board.Team.BLACK);
-                } 
+                }
+                // Update screen
+                board.updateGUI();
             }
             System.out.println("One loop complete");
         }  
@@ -499,7 +499,7 @@ public class Checkers {
         System.out.println("White count: "+wc+"\nBlack count: "+bc+"\n");
     }
     
-    private static int[][] clone2D(int[][] arr){
+    public static int[][] clone2D(int[][] arr){
         int[][] clone = new int[8][8];
         for (int i = 0;i<8;i++){
             clone[i] = arr[i].clone();
