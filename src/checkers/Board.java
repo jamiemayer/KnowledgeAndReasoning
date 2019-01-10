@@ -117,7 +117,7 @@ public class Board {
     
     private void drawGrid(){
         Container cp = window.getContentPane();
-        cp.setPreferredSize(new Dimension(900,900));
+        cp.setPreferredSize(new Dimension(800,800));
         cp.setLayout(new BoxLayout(cp,BoxLayout.Y_AXIS));
         JPanel surface = new JPanel(new GridLayout(8,8));
         //JPanel[][] panels = new JPanel[8][8];
